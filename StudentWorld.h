@@ -19,6 +19,7 @@ public:
     virtual void cleanUp();
     bool isValidPos(int x, int y);
     void handlePlayerLanding(Player* player);
+    void handlePlayerCrossing(Player* player);
     Player* getWinner();
     std::vector<Actor*> getActorsAtPos(int x, int y);
 

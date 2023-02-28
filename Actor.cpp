@@ -7,11 +7,6 @@ Actor::Actor(StudentWorld* studentWorld, int imageID, int startX, int startY, in
 :GraphObject(imageID, startX, startY, startDirection, depth, size), m_studentWorld(studentWorld)
 {};
 
-void Actor::doSomething(){}
-
-void Actor::handlePlayerInteraction(Player* player) {};
-
-
 // PLAYERS
 Player::Player(int playerNum, StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Actor(studentWorld, imageID, startX, startY), m_playerNum(playerNum)
@@ -34,8 +29,10 @@ void Player::doSomething() {
     if (!m_waitingToRoll) {
         
         // handle rolls
-        if (studentWorld()->isValidPos(getX(), getY()))
+        if (studentWorld()->isValidPos(getX(), getY())) {
             m_numRolls--;
+            studentWorld()->handlePlayerCrossing(this);
+        }
         
         // handle direction change
         if (getX() % SPRITE_WIDTH == 0 && (
@@ -43,12 +40,10 @@ void Player::doSomething() {
                 (m_direction == 180 && !studentWorld()->isValidPos(getX()-SPRITE_WIDTH, getY()))
             )) {
             if (studentWorld()->isValidPos(getX(), getY()+SPRITE_WIDTH)) {
-                m_direction = 90;
-                setDirection(0);
+                setWalkingDirection(90);
             }
             else {
-                m_direction = 270;
-                setDirection(0);
+                setWalkingDirection(270);
             }    
         }
         else if (getY() % SPRITE_WIDTH == 0 && (
@@ -56,12 +51,10 @@ void Player::doSomething() {
                 (m_direction == 270 && !studentWorld()->isValidPos(getX(), getY()-SPRITE_HEIGHT))
             )) {
             if (studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) {
-                m_direction = 0;
-                setDirection(0);
+                setWalkingDirection(0);
             }
             else {
-                m_direction = 180;
-                setDirection(180);
+                setWalkingDirection(180);
             }
                
         }
@@ -71,6 +64,7 @@ void Player::doSomething() {
 //        }
         moveAtAngle(m_direction, 2);
         m_ticks_to_move -= 1;
+        
         if (m_ticks_to_move == 0) {
             studentWorld()->handlePlayerLanding(this);
             m_waitingToRoll = true;
@@ -95,6 +89,26 @@ void Player::doSomething() {
 //    decrement the ammunition count by one
 }
 
+void Player::setWalkingDirection(int dir) {
+    switch (dir) {
+        case 0:
+            m_direction=0;
+            setDirection(0);
+            break;
+        case 90:
+            m_direction=90;
+            setDirection(0);
+            break;
+        case 180:
+            m_direction=180;
+            setDirection(180);
+            break;
+        case 270:
+            m_direction=270;
+            setDirection(0);
+            break;
+    }
+}
 
 // SQUARES
 Square::Square(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection, int depth)
@@ -103,8 +117,26 @@ Square::Square(StudentWorld* studentWorld, int imageID, int startX, int startY, 
 StarSquare::StarSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}
 
+void StarSquare::handlePlayerLanding(Player *player) {
+    handlePlayerCrossing(player);
+}
+
+void StarSquare::handlePlayerCrossing(Player *player) {
+    if (player->getCoins() < 20) return;
+    player->addCoins(-20);
+    player->addStarts(1);
+    studentWorld()->playSound(SOUND_GIVE_STAR);
+}
+
 DirectionalSquare::DirectionalSquare(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection)
-:Square(studentWorld, imageID, startX, startY, startDirection) {}
+:Square(studentWorld, imageID, startX, startY, startDirection), m_dir(startDirection) {}
+
+void DirectionalSquare::handlePlayerLanding(Player *player) {
+    player->setWalkingDirection(m_dir);
+}
+void DirectionalSquare::handlePlayerCrossing(Player *player) {
+    player->setWalkingDirection(m_dir);
+}
 
 BankSquare::BankSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}
@@ -124,7 +156,7 @@ void CoinSquare::doSomething() {
     }
 }
 
-void CoinSquare::handlePlayerInteraction(Player *player) {
+void CoinSquare::handlePlayerLanding(Player *player) {
     player->addCoins(m_coinChange);
     if (m_coinChange > 0)
         studentWorld()->playSound(SOUND_GIVE_COIN);

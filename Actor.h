@@ -12,10 +12,11 @@ class Actor: public GraphObject {
 public:
     Actor(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection=0, int depth=0, double size=1.0);
     virtual ~Actor() {}; // implement!
-    virtual void doSomething();
+    virtual void doSomething() {};
     bool isActive() { return m_isActive; }
     void setInactive() { m_isActive = false; }
-    virtual void handlePlayerInteraction(Player* player);
+    virtual void handlePlayerLanding(Player* player) {};
+    virtual void handlePlayerCrossing (Player* player) {};
     StudentWorld* studentWorld() { return m_studentWorld; }
 
 private:
@@ -28,10 +29,12 @@ public:
     Player(int playerNum, StudentWorld* studentWorld, int imageID, int startX, int startY);
     virtual void doSomething();
     void addCoins(int numCoins) { m_numCoins += numCoins; }
+    void addStarts(int numStars) {m_numStars += numStars; }
     int getCoins() { return m_numCoins; }
     int getRolls() { return m_numRolls; }
     int getStars() { return m_numStars; }
     bool hasVortex() { return m_hasVortex; }
+    void setWalkingDirection(int dir);
     
 private:
     int m_ticks_to_move = 0;
@@ -60,7 +63,7 @@ class CoinSquare: public Square {
 public:
     CoinSquare(int coinChange, StudentWorld* studentWorld, int imageID, int startX, int startY);
     virtual void doSomething();
-    virtual void handlePlayerInteraction(Player* player);
+    virtual void handlePlayerLanding(Player* player);
 private:
     int m_coinChange;
 };
@@ -68,11 +71,17 @@ private:
 class StarSquare: public Square {
 public:
     StarSquare(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual void handlePlayerLanding(Player *player);
+    virtual void handlePlayerCrossing(Player *player);
 };
 
 class DirectionalSquare: public Square {
 public:
     DirectionalSquare(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection);
+    virtual void handlePlayerLanding(Player *player);
+    virtual void handlePlayerCrossing(Player *player);
+private:
+    int m_dir;
 };
 
 class BankSquare: public Square {

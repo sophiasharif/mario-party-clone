@@ -164,7 +164,14 @@ std::vector<Actor*> StudentWorld::getActorsAtPos(int x, int y) {
 void StudentWorld::handlePlayerLanding(Player* player) {
     std::vector<Actor*> actorsAtPos = getActorsAtPos(player->getX(), player->getY());
     for (int i=0; i<actorsAtPos.size(); i++) {
-        actorsAtPos[i]->handlePlayerInteraction(player);
+        actorsAtPos[i]->handlePlayerLanding(player);
+    }
+}
+
+void StudentWorld::handlePlayerCrossing(Player* player) {
+    std::vector<Actor*> actorsAtPos = getActorsAtPos(player->getX(), player->getY());
+    for (int i=0; i<actorsAtPos.size(); i++) {
+        actorsAtPos[i]->handlePlayerCrossing(player);
     }
 }
 
