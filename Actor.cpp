@@ -1,5 +1,6 @@
 #include "Actor.h"
 #include "StudentWorld.h"
+#include <algorithm>
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
@@ -27,12 +28,6 @@ void Player::doSomething() {
     }
     
     if (!m_waitingToRoll) {
-        
-        // handle rolls
-        if (studentWorld()->isValidPos(getX(), getY())) {
-            m_numRolls--;
-            studentWorld()->handlePlayerCrossing(this);
-        }
         
         // handle direction change
         if (getX() % SPRITE_WIDTH == 0 && (
@@ -68,6 +63,13 @@ void Player::doSomething() {
         if (m_ticks_to_move == 0) {
             studentWorld()->handlePlayerLanding(this);
             m_waitingToRoll = true;
+            return;
+        }
+        
+        // handle rolls
+        if (studentWorld()->isValidPos(getX(), getY())) {
+            m_numRolls--;
+            studentWorld()->handlePlayerCrossing(this);
         }
     }
     
@@ -140,6 +142,20 @@ void DirectionalSquare::handlePlayerCrossing(Player *player) {
 
 BankSquare::BankSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}
+
+void BankSquare::handlePlayerCrossing(Player *player) {
+    int coinsTaken = std::min(player->getCoins(), 5);
+    player->addCoins(-coinsTaken);
+    studentWorld()->deposit(coinsTaken);
+    studentWorld()->playSound(SOUND_DEPOSIT_BANK);
+}
+
+void BankSquare::handlePlayerLanding(Player *player) {
+    int coinsToAdd = studentWorld()->getBankMoney();
+    player->addCoins(coinsToAdd);
+    studentWorld()->resetBank();
+    studentWorld()->playSound(SOUND_WITHDRAW_BANK);
+}
 
 EventSquare::EventSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}

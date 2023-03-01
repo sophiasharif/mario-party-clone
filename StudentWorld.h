@@ -20,6 +20,9 @@ public:
     bool isValidPos(int x, int y);
     void handlePlayerLanding(Player* player);
     void handlePlayerCrossing(Player* player);
+    void deposit(int numCoins) { m_bank +=numCoins; }
+    int getBankMoney() { return m_bank; }
+    void resetBank() { m_bank=0; }
     Player* getWinner();
     std::vector<Actor*> getActorsAtPos(int x, int y);
 

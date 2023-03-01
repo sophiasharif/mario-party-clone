@@ -87,6 +87,8 @@ private:
 class BankSquare: public Square {
 public:
     BankSquare(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual void handlePlayerLanding(Player *player);
+    virtual void handlePlayerCrossing(Player *player);
 };
 
 class EventSquare: public Square {
