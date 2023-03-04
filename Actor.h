@@ -37,7 +37,7 @@ public:
     void addCoins(int numCoins) { m_numCoins += numCoins; }
    
     int getStars() { return m_numStars; }
-    void addStarts(int numStars) {m_numStars += numStars; }
+    void addStars(int numStars) {m_numStars += numStars; }
     
     int getRolls() { return m_ticks_to_move / 8; }
     
@@ -122,6 +122,7 @@ public:
 class DroppingSquare: public Square {
 public:
     DroppingSquare(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual void handlePlayerLanding(Player *player);
 };
 
 class Baddie: public Actor {

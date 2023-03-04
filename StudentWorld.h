@@ -24,13 +24,13 @@ public:
     int getBankMoney() { return m_bank; }
     void resetBank() { m_bank=0; }
     void swapPlayers(Player* playerThatLanded);
-    std::vector<Actor*> getActorsAtPos(int x, int y);
     std::vector<int> getRandomPos();
     bool isFork(int x, int y);
     std::vector<int> getValidActions(int x, int y);
 
 private:
     std::string generateGameStatText();
+    std::vector<Actor*> getActorsAtPos(int x, int y);
     std::vector<Actor*> m_actors;
     Player* m_peach;
     Player* m_yoshi;

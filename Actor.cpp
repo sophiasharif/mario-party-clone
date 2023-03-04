@@ -171,7 +171,7 @@ void StarSquare::handlePlayerLanding(Player *player) {
 void StarSquare::handlePlayerCrossing(Player *player) {
     if (player->getCoins() < 20) return;
     player->addCoins(-20);
-    player->addStarts(1);
+    player->addStars(1);
     studentWorld()->playSound(SOUND_GIVE_STAR);
 }
 
@@ -226,6 +226,25 @@ void EventSquare::handlePlayerLanding(Player *player) {
 
 DroppingSquare::DroppingSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}
+
+void DroppingSquare::handlePlayerLanding(Player *player) {
+    int action = randInt(1, 2);
+    if (action == 1) {
+        // update coins
+        int coins = player->getCoins();
+        if (coins < 10) {
+            player->addCoins(-coins);
+        } else {
+            player->addCoins(-10);
+        }
+    } else {
+        // subtract a star if a player has any
+        if (player->getStars() > 0) {
+            player->addStars(-1);
+        }
+    }
+    studentWorld()->playSound(SOUND_DROPPING_SQUARE_ACTIVATE);
+}
 
 CoinSquare::CoinSquare(int coinChange, StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY), m_coinChange(coinChange) {}
