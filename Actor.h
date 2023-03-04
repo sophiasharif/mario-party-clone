@@ -18,6 +18,10 @@ public:
     virtual void handlePlayerLanding(Player* player) {};
     virtual void handlePlayerCrossing (Player* player) {};
     StudentWorld* studentWorld() { return m_studentWorld; }
+    // properties
+    virtual bool isSquare() { return false; }
+    virtual bool isEvil() { return false; }
+    virtual bool managesDirection() { return false; }
 
 private:
     bool m_isActive = true;
@@ -60,7 +64,8 @@ private:
     int m_numStars = 0;
     int m_numRolls = 0;
     bool m_hasVortex = false;
-    void manageSpriteDiraction();
+    void manageSpriteDirection();
+    bool userChoseDirection();
 };
 
 class Yoshi: public Player {
@@ -72,6 +77,7 @@ public:
 class Square: public Actor {
 public:
     Square(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection=0, int depth=1);
+    virtual bool isSquare() {return true;}
 };
 
 class CoinSquare: public Square {
@@ -95,6 +101,7 @@ public:
     DirectionalSquare(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection);
     virtual void handlePlayerLanding(Player *player);
     virtual void handlePlayerCrossing(Player *player);
+    virtual bool managesDirection() { return true; }
 private:
     int m_dir;
 };
@@ -120,6 +127,7 @@ public:
 class Baddie: public Actor {
 public:
     Baddie(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual bool isEvil() { return true; }
 };
 
 class Bowser: public Baddie {

@@ -224,3 +224,49 @@ void StudentWorld::swapPlayers(Player* playerThatLanded) {
     m_yoshi->setRollState(state);
     
 }
+
+std::vector<int> StudentWorld::getRandomPos() {
+    std::vector<int> coords;
+    
+    int rand = randInt(0, m_actors.size()-1);
+    coords.push_back(m_actors[rand]->getX());
+    coords.push_back(m_actors[rand]->getY());
+    
+    return coords;
+}
+
+Actor* StudentWorld::getSquareAtPos(int x, int y) {
+    std::vector<Actor*> actorsAtPos = getActorsAtPos(x, y);
+    for (int i=0; i<actorsAtPos.size(); i++)
+        if (actorsAtPos[i]->isSquare())
+            return actorsAtPos[i];
+    
+    return nullptr;
+}
+
+bool StudentWorld::isFork(int x, int y) {
+    
+    if (!isValidPos(x, y))
+        return false;
+    
+    // ignore fork if directional square
+    if (getSquareAtPos(x, y)->managesDirection())
+        return false;
+    
+    return getValidActions(x, y).size() > 2;
+}
+
+std::vector<int> StudentWorld::getValidActions(int x, int y) {
+    std::vector<int> validActions;
+    int dirs[4][3] = {{SPRITE_WIDTH, 0, ACTION_RIGHT}, {-SPRITE_WIDTH, 0, ACTION_LEFT}, {0, SPRITE_HEIGHT, ACTION_UP}, {0,-SPRITE_HEIGHT, ACTION_DOWN}};
+    for (int i=0; i<4; i++) {
+        int dx = dirs[i][0];
+        int dy = dirs[i][1];
+        Actor* square = getSquareAtPos(x+dx, y+dy);
+        if (square)
+            validActions.push_back(dirs[i][2]);
+    }
+    
+    return validActions;
+}
+

@@ -24,8 +24,10 @@ public:
     int getBankMoney() { return m_bank; }
     void resetBank() { m_bank=0; }
     void swapPlayers(Player* playerThatLanded);
-    Player* getWinner();
     std::vector<Actor*> getActorsAtPos(int x, int y);
+    std::vector<int> getRandomPos();
+    bool isFork(int x, int y);
+    std::vector<int> getValidActions(int x, int y);
 
 private:
     std::string generateGameStatText();
@@ -33,6 +35,8 @@ private:
     Player* m_peach;
     Player* m_yoshi;
     int m_bank=0;
+    Actor* getSquareAtPos(int x, int y);
+    Player* getWinner();
 };
 
 #endif // STUDENTWORLD_H_
