@@ -28,13 +28,28 @@ class Player: public Actor {
 public:
     Player(int playerNum, StudentWorld* studentWorld, int imageID, int startX, int startY);
     virtual void doSomething();
-    void addCoins(int numCoins) { m_numCoins += numCoins; }
-    void addStarts(int numStars) {m_numStars += numStars; }
+    
     int getCoins() { return m_numCoins; }
-    int getRolls() { return m_numRolls; }
+    void addCoins(int numCoins) { m_numCoins += numCoins; }
+   
     int getStars() { return m_numStars; }
+    void addStarts(int numStars) {m_numStars += numStars; }
+    
+    int getRolls() { return m_ticks_to_move / 8; }
+    
+    int getTicks() { return m_ticks_to_move; }
+    void setTicks(int ticks) { m_ticks_to_move = ticks; }
+    
     bool hasVortex() { return m_hasVortex; }
+    void giveVortex() { m_hasVortex = true; }
+    
+    int getWalkingDirection() { return m_direction; }
     void setWalkingDirection(int dir);
+    
+    bool getRollState() { return m_waitingToRoll; }
+    void setRollState(bool rollState) { m_waitingToRoll = rollState; }
+    
+    void teleport();
     
 private:
     int m_ticks_to_move = 0;
@@ -45,7 +60,7 @@ private:
     int m_numStars = 0;
     int m_numRolls = 0;
     bool m_hasVortex = false;
-//    bool canMoveInDir(int dir);
+    void manageSpriteDiraction();
 };
 
 class Yoshi: public Player {
@@ -94,6 +109,7 @@ public:
 class EventSquare: public Square {
 public:
     EventSquare(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual void handlePlayerLanding(Player *player);
 };
 
 class DroppingSquare: public Square {

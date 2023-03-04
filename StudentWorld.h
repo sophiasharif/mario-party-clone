@@ -23,6 +23,7 @@ public:
     void deposit(int numCoins) { m_bank +=numCoins; }
     int getBankMoney() { return m_bank; }
     void resetBank() { m_bank=0; }
+    void swapPlayers(Player* playerThatLanded);
     Player* getWinner();
     std::vector<Actor*> getActorsAtPos(int x, int y);
 

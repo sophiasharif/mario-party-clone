@@ -14,11 +14,12 @@ Player::Player(int playerNum, StudentWorld* studentWorld, int imageID, int start
 {};
 
 void Player::doSomething() {
+    
+    // STATE 1: WAITING TO ROLL
     if (m_waitingToRoll) {
         int action = studentWorld()->getAction(m_playerNum);
         if (action == ACTION_ROLL) {
             int die_roll = randInt(1, 10);
-            m_numRolls = die_roll;
             m_ticks_to_move = die_roll * 8;
             m_waitingToRoll = false;
         }
@@ -27,68 +28,52 @@ void Player::doSomething() {
         }
     }
     
+    // STATE 2: WALKING
     if (!m_waitingToRoll) {
         
-        // handle direction change
-        if (getX() % SPRITE_WIDTH == 0 && (
-                (m_direction == 0 && !studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) ||
-                (m_direction == 180 && !studentWorld()->isValidPos(getX()-SPRITE_WIDTH, getY()))
-            )) {
-            if (studentWorld()->isValidPos(getX(), getY()+SPRITE_WIDTH)) {
-                setWalkingDirection(90);
-            }
-            else {
-                setWalkingDirection(270);
-            }    
-        }
-        else if (getY() % SPRITE_WIDTH == 0 && (
-                (m_direction == 90 && !studentWorld()->isValidPos(getX(), getY()+SPRITE_HEIGHT)) ||
-                (m_direction == 270 && !studentWorld()->isValidPos(getX(), getY()-SPRITE_HEIGHT))
-            )) {
-            if (studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) {
-                setWalkingDirection(0);
-            }
-            else {
-                setWalkingDirection(180);
-            }
-               
-        }
-
-//        if (getDirection() % 180 == 0) {
-//            if (getX() % 16 == 0)
-//        }
+        // move
+        manageSpriteDiraction();
         moveAtAngle(m_direction, 2);
-        m_ticks_to_move -= 1;
+        m_ticks_to_move--;
         
+        // handle landing
         if (m_ticks_to_move == 0) {
-            studentWorld()->handlePlayerLanding(this);
             m_waitingToRoll = true;
+            studentWorld()->handlePlayerLanding(this);
             return;
         }
         
-        // handle rolls
-        if (studentWorld()->isValidPos(getX(), getY())) {
-            m_numRolls--;
+        // handle crossing (landing has precedence over crossing)
+        if (studentWorld()->isValidPos(getX(), getY()))
             studentWorld()->handlePlayerCrossing(this);
-        }
     }
     
-//    switch(action) {
-//        case ACTION_LEFT:
-//            moveTo(getX()-2, getY());
-//
-//    }
-// if the player presses the left arrow key:
-    //    set the avatar's direction to left
-    //    move the avatar two pixels forward
-// if the player presses the right arrow key:
-    //    set the avatar's direction to right
-    //    move the avatar two pixels forward
-    
+}
 
-//    if the player presses the space key:
-//    add a new projectile directly in front of the player
-//    decrement the ammunition count by one
+void Player::manageSpriteDiraction() {
+    if (getX() % SPRITE_WIDTH == 0 && (
+            (m_direction == 0 && !studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) ||
+            (m_direction == 180 && !studentWorld()->isValidPos(getX()-SPRITE_WIDTH, getY()))
+        )) {
+        if (studentWorld()->isValidPos(getX(), getY()+SPRITE_WIDTH)) {
+            setWalkingDirection(90);
+        }
+        else {
+            setWalkingDirection(270);
+        }
+    }
+    else if (getY() % SPRITE_WIDTH == 0 && (
+            (m_direction == 90 && !studentWorld()->isValidPos(getX(), getY()+SPRITE_HEIGHT)) ||
+            (m_direction == 270 && !studentWorld()->isValidPos(getX(), getY()-SPRITE_HEIGHT))
+        )) {
+        if (studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) {
+            setWalkingDirection(0);
+        }
+        else {
+            setWalkingDirection(180);
+        }
+           
+    }
 }
 
 void Player::setWalkingDirection(int dir) {
@@ -160,6 +145,21 @@ void BankSquare::handlePlayerLanding(Player *player) {
 EventSquare::EventSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}
 
+void EventSquare::handlePlayerLanding(Player *player) {
+//    int action = randInt(1, 3);
+    int action = 2;
+    if (action == 1) {
+//        player->teleport();
+        studentWorld()->playSound(SOUND_PLAYER_TELEPORT);
+    }
+    else if (action == 2)
+        studentWorld()->swapPlayers(player);
+    else {
+        player->giveVortex();
+        studentWorld()->playSound(SOUND_GIVE_VORTEX);
+    }
+}
+
 DroppingSquare::DroppingSquare(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Square(studentWorld, imageID, startX, startY) {}
 
@@ -178,7 +178,6 @@ void CoinSquare::handlePlayerLanding(Player *player) {
         studentWorld()->playSound(SOUND_GIVE_COIN);
     else
         studentWorld()->playSound(SOUND_TAKE_COIN);
-    std::cerr << "player now has " << player->getCoins() << " coins." << std::endl;
 };
 
 

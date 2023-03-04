@@ -199,3 +199,28 @@ Player* StudentWorld::getWinner() {
     }
        
 }
+
+void StudentWorld::swapPlayers(Player* playerThatLanded) {
+//    i. x, y coordinates
+    int x = m_peach->getX(), y=m_peach->getY();
+    m_peach->moveTo(m_yoshi->getX(), m_yoshi->getY());
+    m_yoshi->moveTo(x, y);
+    
+//    ii. the number of ticks left that the player has to move before
+//    completing their roll
+    int ticks = m_peach->getTicks();
+    m_peach->setTicks(m_yoshi->getTicks());
+    m_yoshi->setTicks(ticks);
+    
+//    iii. the player's walk direction
+//    iv. the player's sprite direction
+    int dir = m_peach->getWalkingDirection();
+    m_peach->setWalkingDirection(m_yoshi->getWalkingDirection());
+    m_yoshi->setWalkingDirection(dir);
+
+//    v. the player's roll/walk state
+    bool state = m_peach->getRollState();
+    m_peach->setRollState(m_yoshi->getRollState());
+    m_yoshi->setRollState(state);
+    
+}
