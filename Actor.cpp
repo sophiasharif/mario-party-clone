@@ -8,15 +8,13 @@ Actor::Actor(StudentWorld* studentWorld, int imageID, int startX, int startY, in
 :GraphObject(imageID, startX, startY, startDirection, depth, size), m_studentWorld(studentWorld)
 {};
 
-// PLAYERS
-Player::Player(int playerNum, StudentWorld* studentWorld, int imageID, int startX, int startY)
-:Actor(studentWorld, imageID, startX, startY), m_playerNum(playerNum)
-{};
+MoveableActor::MoveableActor(StudentWorld* studentWorld, int imageID, int startX, int startY)
+:Actor(studentWorld, imageID, startX, startY) {}
 
-void Player::doSomething() {
+void MoveableActor::doSomething() {
     
     // STATE 1: WAITING TO ROLL
-    if (m_waitingToRoll) 
+    if (m_waitingToRoll)
         handleWaitingToRoll();
     
     // STATE 2: WALKING
@@ -29,7 +27,7 @@ void Player::doSomething() {
         
         // move
         manageSpriteDirection();
-        moveAtAngle(m_direction, 2);
+        moveAtAngle(getWalkingDirection(), 2);
         m_ticks_to_move--;
         
         // handle landing or crossing; landing has precedence over crossing
@@ -40,20 +38,50 @@ void Player::doSomething() {
     }
 }
 
-void Player::handleCrossing()  { studentWorld()->handlePlayerCrossing(this);
+void MoveableActor::manageSpriteDirection() {
+    if (getX() % SPRITE_WIDTH == 0 && (
+            (getWalkingDirection() == 0 && !studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) ||
+            (getWalkingDirection() == 180 && !studentWorld()->isValidPos(getX()-SPRITE_WIDTH, getY()))
+        )) {
+        if (studentWorld()->isValidPos(getX(), getY()+SPRITE_WIDTH)) {
+            setWalkingDirection(90);
+        }
+        else {
+            setWalkingDirection(270);
+        }
+    }
+    else if (getY() % SPRITE_WIDTH == 0 && (
+            (getWalkingDirection() == 90 && !studentWorld()->isValidPos(getX(), getY()+SPRITE_HEIGHT)) ||
+            (getWalkingDirection() == 270 && !studentWorld()->isValidPos(getX(), getY()-SPRITE_HEIGHT))
+        )) {
+        if (studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) {
+            setWalkingDirection(0);
+        }
+        else {
+            setWalkingDirection(180);
+        }
+           
+    }
 }
 
-void Player::handleLanding() {
-    m_waitingToRoll = true;
-    studentWorld()->handlePlayerLanding(this);
-}
-
-void Player::handleWaitingToRoll() {
-    int action = studentWorld()->getAction(m_playerNum);
-    if (action == ACTION_ROLL) {
-        int die_roll = randInt(1, 10);
-        m_ticks_to_move = die_roll * 8;
-        m_waitingToRoll = false;
+void MoveableActor::setWalkingDirection(int dir) {
+    switch (dir) {
+        case 0:
+            m_direction=0;
+            setDirection(0);
+            break;
+        case 90:
+            m_direction=90;
+            setDirection(0);
+            break;
+        case 180:
+            m_direction=180;
+            setDirection(180);
+            break;
+        case 270:
+            m_direction=270;
+            setDirection(0);
+            break;
     }
 }
 
@@ -89,66 +117,41 @@ int actionToDirection(int action) {
     }
 }
 
+// PLAYERS
+Player::Player(int playerNum, StudentWorld* studentWorld, int imageID, int startX, int startY)
+:MoveableActor(studentWorld, imageID, startX, startY), m_playerNum(playerNum)
+{};
+
+void Player::handleCrossing()  { studentWorld()->handlePlayerCrossing(this);
+}
+
+void Player::handleLanding() {
+    setRollState(true);
+    studentWorld()->handlePlayerLanding(this);
+}
+
+void Player::handleWaitingToRoll() {
+    int action = studentWorld()->getAction(m_playerNum);
+    if (action == ACTION_ROLL) {
+        int die_roll = randInt(1, 10);
+        setTicks(die_roll * 8);
+        setRollState(false);
+    }
+}
+
 bool Player::handleFork() {
     int action = studentWorld()->getAction(m_playerNum);
     
     std::vector<int> validActions = studentWorld()->getValidActions(getX(), getY());
     
     for (int i=0; i<validActions.size(); i++) {
-        if (action == validActions[i] && !(action == invalidAction(m_direction))) {
+        if (action == validActions[i] && !(action == invalidAction(getWalkingDirection()))) {
             setWalkingDirection(actionToDirection(action));
             return true;
         }
     }
     
     return false;
-}
-
-void Player::manageSpriteDirection() {
-    if (getX() % SPRITE_WIDTH == 0 && (
-            (m_direction == 0 && !studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) ||
-            (m_direction == 180 && !studentWorld()->isValidPos(getX()-SPRITE_WIDTH, getY()))
-        )) {
-        if (studentWorld()->isValidPos(getX(), getY()+SPRITE_WIDTH)) {
-            setWalkingDirection(90);
-        }
-        else {
-            setWalkingDirection(270);
-        }
-    }
-    else if (getY() % SPRITE_WIDTH == 0 && (
-            (m_direction == 90 && !studentWorld()->isValidPos(getX(), getY()+SPRITE_HEIGHT)) ||
-            (m_direction == 270 && !studentWorld()->isValidPos(getX(), getY()-SPRITE_HEIGHT))
-        )) {
-        if (studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) {
-            setWalkingDirection(0);
-        }
-        else {
-            setWalkingDirection(180);
-        }
-           
-    }
-}
-
-void Player::setWalkingDirection(int dir) {
-    switch (dir) {
-        case 0:
-            m_direction=0;
-            setDirection(0);
-            break;
-        case 90:
-            m_direction=90;
-            setDirection(0);
-            break;
-        case 180:
-            m_direction=180;
-            setDirection(180);
-            break;
-        case 270:
-            m_direction=270;
-            setDirection(0);
-            break;
-    }
 }
 
 void Player::teleport() {

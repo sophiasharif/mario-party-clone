@@ -28,10 +28,31 @@ private:
     StudentWorld* m_studentWorld;
 };
 
-class Player: public Actor {
+class MoveableActor: public Actor {
+public:
+    MoveableActor(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    int getWalkingDirection() { return m_direction; }
+    void setWalkingDirection(int dir);
+    void manageSpriteDirection();
+    int getTicks() { return m_ticks_to_move; }
+    void setTicks(int ticks) { m_ticks_to_move = ticks; }
+    bool getRollState() { return m_waitingToRoll; }
+    void setRollState(bool rollState) { m_waitingToRoll = rollState; }
+    virtual void doSomething();
+
+private:
+    int m_direction = 0;
+    int m_ticks_to_move = 0;
+    bool m_waitingToRoll = true;
+    virtual void handleWaitingToRoll()=0;
+    virtual bool handleFork()=0;
+    virtual void handleCrossing()=0;
+    virtual void handleLanding()=0;
+};
+
+class Player: public MoveableActor {
 public:
     Player(int playerNum, StudentWorld* studentWorld, int imageID, int startX, int startY);
-    virtual void doSomething();
     
     int getCoins() { return m_numCoins; }
     void addCoins(int numCoins) { m_numCoins += numCoins; }
@@ -39,32 +60,19 @@ public:
     int getStars() { return m_numStars; }
     void addStars(int numStars) {m_numStars += numStars; }
     
-    int getRolls() { return m_ticks_to_move / 8; }
-    
-    int getTicks() { return m_ticks_to_move; }
-    void setTicks(int ticks) { m_ticks_to_move = ticks; }
+    int getRolls() { return getTicks() / 8; }
     
     bool hasVortex() { return m_hasVortex; }
     void giveVortex() { m_hasVortex = true; }
     
-    int getWalkingDirection() { return m_direction; }
-    void setWalkingDirection(int dir);
-    
-    bool getRollState() { return m_waitingToRoll; }
-    void setRollState(bool rollState) { m_waitingToRoll = rollState; }
-    
     void teleport();
     
 private:
-    int m_ticks_to_move = 0;
-    bool m_waitingToRoll = true;
-    int m_direction = 0;
     int m_playerNum;
     int m_numCoins = 0;
     int m_numStars = 0;
     int m_numRolls = 0;
     bool m_hasVortex = false;
-    void manageSpriteDirection();
     void handleWaitingToRoll();
     bool handleFork();
     void handleCrossing();
