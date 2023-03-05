@@ -169,6 +169,10 @@ void StudentWorld::handlePlayerLanding(Player* player) {
 }
 
 void StudentWorld::handlePlayerCrossing(Player* player) {
+    // only run function if player is actually over a square
+    if (!isValidPos(player->getX(), player->getY()))
+        return;
+    
     std::vector<Actor*> actorsAtPos = getActorsAtPos(player->getX(), player->getY());
     for (int i=0; i<actorsAtPos.size(); i++) {
         actorsAtPos[i]->handlePlayerCrossing(player);
@@ -244,13 +248,13 @@ Actor* StudentWorld::getSquareAtPos(int x, int y) {
     return nullptr;
 }
 
-bool StudentWorld::isFork(int x, int y) {
+bool StudentWorld::isFork(int x, int y, bool considerDirectionalSquares) {
     
     if (!isValidPos(x, y))
         return false;
     
     // ignore fork if directional square
-    if (getSquareAtPos(x, y)->managesDirection())
+    if (considerDirectionalSquares && getSquareAtPos(x, y)->managesDirection())
         return false;
     
     return getValidActions(x, y).size() > 2;

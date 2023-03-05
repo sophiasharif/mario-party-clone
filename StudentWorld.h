@@ -25,7 +25,7 @@ public:
     void resetBank() { m_bank=0; }
     void swapPlayers(Player* playerThatLanded);
     std::vector<int> getRandomPos();
-    bool isFork(int x, int y);
+    bool isFork(int x, int y, bool considerDirectionalSquares);
     std::vector<int> getValidActions(int x, int y);
 
 private:

@@ -65,7 +65,10 @@ private:
     int m_numRolls = 0;
     bool m_hasVortex = false;
     void manageSpriteDirection();
-    bool userChoseDirection();
+    void handleWaitingToRoll();
+    bool handleFork();
+    void handleCrossing();
+    void handleLanding();
 };
 
 class Yoshi: public Player {

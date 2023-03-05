@@ -16,46 +16,45 @@ Player::Player(int playerNum, StudentWorld* studentWorld, int imageID, int start
 void Player::doSomething() {
     
     // STATE 1: WAITING TO ROLL
-    if (m_waitingToRoll) {
-        int action = studentWorld()->getAction(m_playerNum);
-        if (action == ACTION_ROLL) {
-            int die_roll = randInt(1, 10);
-            m_ticks_to_move = die_roll * 8;
-            m_waitingToRoll = false;
-        }
-        else {
-            return;
-        }
-    }
+    if (m_waitingToRoll) 
+        handleWaitingToRoll();
     
     // STATE 2: WALKING
     if (!m_waitingToRoll) {
         
-        if (studentWorld()->isFork(getX(), getY())) {
-            if (!userChoseDirection())
+        // if it's a fork, make actor handle it
+        if (studentWorld()->isFork(getX(), getY(), true))
+            if (!handleFork())
                 return;
-        }
         
         // move
         manageSpriteDirection();
         moveAtAngle(m_direction, 2);
         m_ticks_to_move--;
         
-        // handle landing
-        if (m_ticks_to_move == 0) {
-            m_waitingToRoll = true;
-            studentWorld()->handlePlayerLanding(this);
-            return;
-        }
-        
-        // handle crossing (landing has precedence over crossing)
-        if (studentWorld()->isValidPos(getX(), getY())) {
-            studentWorld()->handlePlayerCrossing(this);
-            studentWorld()->isFork(getX(), getY());
-        }
-            
+        // handle landing or crossing; landing has precedence over crossing
+        if (m_ticks_to_move == 0)
+            handleLanding();
+        else
+            handleCrossing();
     }
-    
+}
+
+void Player::handleCrossing()  { studentWorld()->handlePlayerCrossing(this);
+}
+
+void Player::handleLanding() {
+    m_waitingToRoll = true;
+    studentWorld()->handlePlayerLanding(this);
+}
+
+void Player::handleWaitingToRoll() {
+    int action = studentWorld()->getAction(m_playerNum);
+    if (action == ACTION_ROLL) {
+        int die_roll = randInt(1, 10);
+        m_ticks_to_move = die_roll * 8;
+        m_waitingToRoll = false;
+    }
 }
 
 int invalidAction(int dir) {
@@ -90,7 +89,7 @@ int actionToDirection(int action) {
     }
 }
 
-bool Player::userChoseDirection() {
+bool Player::handleFork() {
     int action = studentWorld()->getAction(m_playerNum);
     
     std::vector<int> validActions = studentWorld()->getValidActions(getX(), getY());
@@ -206,8 +205,7 @@ EventSquare::EventSquare(StudentWorld* studentWorld, int imageID, int startX, in
 :Square(studentWorld, imageID, startX, startY) {}
 
 void EventSquare::handlePlayerLanding(Player *player) {
-//    int action = randInt(1, 3);
-    int action = 1;
+    int action = randInt(1, 3);
     if (action == 1) {
         player->teleport();
         studentWorld()->playSound(SOUND_PLAYER_TELEPORT);
