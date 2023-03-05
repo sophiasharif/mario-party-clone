@@ -36,14 +36,15 @@ public:
     void manageSpriteDirection();
     int getTicks() { return m_ticks_to_move; }
     void setTicks(int ticks) { m_ticks_to_move = ticks; }
-    bool getRollState() { return m_waitingToRoll; }
-    void setRollState(bool rollState) { m_waitingToRoll = rollState; }
+    bool getWaitingState() { return m_waiting; }
+    void setWaitingState(bool rollState) { m_waiting = rollState; }
     virtual void doSomething();
+    void teleport();
 
 private:
     int m_direction = 0;
     int m_ticks_to_move = 0;
-    bool m_waitingToRoll = true;
+    bool m_waiting = true;
     virtual void handleWaitingToRoll()=0;
     virtual bool handleFork()=0;
     virtual void handleCrossing()=0;
@@ -64,8 +65,6 @@ public:
     
     bool hasVortex() { return m_hasVortex; }
     void giveVortex() { m_hasVortex = true; }
-    
-    void teleport();
     
 private:
     int m_playerNum;
@@ -136,20 +135,41 @@ public:
     virtual void handlePlayerLanding(Player *player);
 };
 
-class Baddie: public Actor {
+
+const int PAUSE_COUNTER = 50;
+
+class Baddie: public MoveableActor {
 public:
     Baddie(StudentWorld* studentWorld, int imageID, int startX, int startY);
     virtual bool isEvil() { return true; }
+    int getPauseCounter() {return m_pauseCounter;}
+    void setPauseCounter(int num) {m_pauseCounter = num;}
+    
+    
+private:
+    virtual void handleWaitingToRoll();
+    virtual bool handleFork();
+    virtual void handleCrossing() {};
+    virtual void handleLanding();
+    int m_pauseCounter = PAUSE_COUNTER;
+    virtual void baddieLandingAction() = 0;
 };
 
 class Bowser: public Baddie {
 public:
     Bowser(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual void handlePlayerLanding(Player *player);
+private:
+    virtual void baddieLandingAction();
+
 };
 
 class Boo: public Baddie {
 public:
     Boo(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    virtual void handlePlayerLanding(Player *player);
+private:
+    virtual void baddieLandingAction() {};
 };
 
 class Vortex: public Actor {

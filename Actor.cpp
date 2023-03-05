@@ -14,16 +14,15 @@ MoveableActor::MoveableActor(StudentWorld* studentWorld, int imageID, int startX
 void MoveableActor::doSomething() {
     
     // STATE 1: WAITING TO ROLL
-    if (m_waitingToRoll)
+    if (m_waiting)
         handleWaitingToRoll();
     
     // STATE 2: WALKING
-    if (!m_waitingToRoll) {
+    if (!m_waiting) {
         
         // if it's a fork, make actor handle it
-        if (studentWorld()->isFork(getX(), getY(), true))
-            if (!handleFork())
-                return;
+        if (!handleFork())
+            return;
         
         // move
         manageSpriteDirection();
@@ -31,8 +30,10 @@ void MoveableActor::doSomething() {
         m_ticks_to_move--;
         
         // handle landing or crossing; landing has precedence over crossing
-        if (m_ticks_to_move == 0)
+        if (m_ticks_to_move == 0) {
+            setWaitingState(true);
             handleLanding();
+        }
         else
             handleCrossing();
     }
@@ -85,6 +86,11 @@ void MoveableActor::setWalkingDirection(int dir) {
     }
 }
 
+void MoveableActor::teleport() {
+    std::vector<int> coords = studentWorld()->getRandomPos();
+    moveTo(coords[0], coords[1]);
+}
+
 int invalidAction(int dir) {
     switch(dir) {
         case 0:
@@ -126,7 +132,6 @@ void Player::handleCrossing()  { studentWorld()->handlePlayerCrossing(this);
 }
 
 void Player::handleLanding() {
-    setRollState(true);
     studentWorld()->handlePlayerLanding(this);
 }
 
@@ -135,11 +140,14 @@ void Player::handleWaitingToRoll() {
     if (action == ACTION_ROLL) {
         int die_roll = randInt(1, 10);
         setTicks(die_roll * 8);
-        setRollState(false);
+        setWaitingState(false);
     }
 }
 
 bool Player::handleFork() {
+    if (!studentWorld()->isFork(getX(), getY(), true))
+        return true;
+    
     int action = studentWorld()->getAction(m_playerNum);
     
     std::vector<int> validActions = studentWorld()->getValidActions(getX(), getY());
@@ -152,11 +160,6 @@ bool Player::handleFork() {
     }
     
     return false;
-}
-
-void Player::teleport() {
-    std::vector<int> coords = studentWorld()->getRandomPos();
-    moveTo(coords[0], coords[1]);
 }
 
 // SQUARES
@@ -215,7 +218,7 @@ void EventSquare::handlePlayerLanding(Player *player) {
     }
     
     else if (action == 2) {
-        studentWorld()->swapPlayers(player);
+        studentWorld()->swapPlayers();
         studentWorld()->playSound(SOUND_PLAYER_TELEPORT);
     }
         
@@ -266,17 +269,82 @@ void CoinSquare::handlePlayerLanding(Player *player) {
 
 
 // BADDIES
+
+
 Baddie::Baddie(StudentWorld* studentWorld, int imageID, int startX, int startY)
-:Actor(studentWorld, imageID, startX, startY)
+:MoveableActor(studentWorld, imageID, startX, startY)
 {}
+
+void Baddie::handleWaitingToRoll(){
+    m_pauseCounter--;
+    if (m_pauseCounter == 0) {
+        
+        // choose a random direction
+        std::vector<int> validActions = studentWorld()->getValidActions(getX(), getY());
+        
+        int randomAction = validActions[randInt(0, validActions.size()-1)];
+        
+        setWalkingDirection(actionToDirection(randomAction));
+        
+        // set moves
+        int squaresToMove = randInt(1, 10);
+        setTicks(squaresToMove * 8);
+        setWaitingState(false);
+    }
+};
+
+bool Baddie::handleFork(){
+    // choose a random direction
+    if (!studentWorld()->isFork(getX(), getY(), false))
+        return true;
+    
+    std::vector<int> validActions = studentWorld()->getValidActions(getX(), getY());
+    
+    int randomAction = validActions[randInt(0, validActions.size()-1)];
+    
+    setWalkingDirection(actionToDirection(randomAction));
+    
+    return true;
+    
+}
+
+void Baddie::handleLanding(){
+    m_pauseCounter = PAUSE_COUNTER;
+    baddieLandingAction();
+};
 
 Bowser::Bowser(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Baddie(studentWorld, imageID, startX, startY)
 {}
 
+void Bowser::handlePlayerLanding(Player *player) {
+    if (getWaitingState() && (randInt(1, 2) == 1)) {
+        player->addCoins(-player->getCoins());
+        player->addStars(-player->getStars());
+        studentWorld()->playSound(SOUND_BOWSER_ACTIVATE);
+    }
+}
+
+void Bowser::baddieLandingAction() {
+    if (randInt(1, 4) == 1)
+        studentWorld()->createDroppingSquare(getX(), getY());
+}
+
 Boo::Boo(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :Baddie(studentWorld, imageID, startX, startY)
 {}
+
+void Boo::handlePlayerLanding(Player *player) {
+    if (getWaitingState()) {
+        if (randInt(1, 2) == 1)
+            studentWorld()->swapPlayerCoins();
+        else
+            studentWorld()->swapPlayerStars();
+       
+        studentWorld()->playSound(SOUND_BOO_ACTIVATE);
+    }
+}
+
 
 // VORTEX
 

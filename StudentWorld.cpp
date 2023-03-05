@@ -106,6 +106,10 @@ int StudentWorld::move()
     for (int i=0; i<m_actors.size(); i++) {
         if (m_actors[i]->isActive()) {
             m_actors[i]->doSomething();
+        } else {
+            delete m_actors[i];
+            m_actors.erase(m_actors.begin()+i);
+            std::cerr << "deleted an actor" << std::endl;
         }
     }
     
@@ -204,7 +208,7 @@ Player* StudentWorld::getWinner() {
        
 }
 
-void StudentWorld::swapPlayers(Player* playerThatLanded) {
+void StudentWorld::swapPlayers() {
 //    i. x, y coordinates
     int x = m_peach->getX(), y=m_peach->getY();
     m_peach->moveTo(m_yoshi->getX(), m_yoshi->getY());
@@ -223,9 +227,9 @@ void StudentWorld::swapPlayers(Player* playerThatLanded) {
     m_yoshi->setWalkingDirection(dir);
 
 //    v. the player's roll/walk state
-    bool state = m_peach->getRollState();
-    m_peach->setRollState(m_yoshi->getRollState());
-    m_yoshi->setRollState(state);
+    bool state = m_peach->getWaitingState();
+    m_peach->setWaitingState(m_yoshi->getWaitingState());
+    m_yoshi->setWaitingState(state);
     
 }
 
@@ -254,7 +258,7 @@ bool StudentWorld::isFork(int x, int y, bool considerDirectionalSquares) {
         return false;
     
     // ignore fork if directional square
-    if (considerDirectionalSquares && getSquareAtPos(x, y)->managesDirection())
+    if (considerDirectionalSquares && getSquareAtPos(x, y) &&  getSquareAtPos(x, y)->managesDirection())
         return false;
     
     return getValidActions(x, y).size() > 2;
@@ -274,3 +278,34 @@ std::vector<int> StudentWorld::getValidActions(int x, int y) {
     return validActions;
 }
 
+void StudentWorld::swapPlayerCoins() {
+    int temp = m_yoshi->getCoins();
+    m_yoshi->addCoins(-m_yoshi->getCoins()+m_peach->getCoins());
+    m_peach->addCoins(-m_peach->getCoins()+temp);
+};
+
+void StudentWorld::swapPlayerStars() {
+    int temp = m_yoshi->getStars();
+    m_yoshi->addStars(-m_yoshi->getStars()+m_peach->getStars());
+    m_peach->addStars(-m_peach->getStars()+temp);
+};
+
+
+void StudentWorld::createDroppingSquare(int x, int y) {
+    // find square with those coords
+    Actor* square = nullptr;
+    for (int i=0; i<m_actors.size(); i++) {
+        if (m_actors[i]->getX() == x && m_actors[i]->getY() == y && m_actors[i]->isSquare()) {
+            square = m_actors[i];
+            break;
+        }
+    }
+    if (!square){
+        std::cerr << "SQUARE DOES NOT EXIST" << std::endl;
+        exit(1);
+    }
+    square->setInactive();
+    m_actors.push_back(new DroppingSquare(this, IID_DROPPING_SQUARE, x, y));
+    playSound(SOUND_DROPPING_SQUARE_CREATED);
+    
+}

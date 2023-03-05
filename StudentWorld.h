@@ -23,10 +23,13 @@ public:
     void deposit(int numCoins) { m_bank +=numCoins; }
     int getBankMoney() { return m_bank; }
     void resetBank() { m_bank=0; }
-    void swapPlayers(Player* playerThatLanded);
+    void swapPlayers();
+    void swapPlayerCoins();
+    void swapPlayerStars();
     std::vector<int> getRandomPos();
     bool isFork(int x, int y, bool considerDirectionalSquares);
     std::vector<int> getValidActions(int x, int y);
+    void createDroppingSquare(int x, int y);
 
 private:
     std::string generateGameStatText();
