@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 using namespace std;
 
 GameWorld* createStudentWorld(string assetPath)
@@ -20,6 +21,7 @@ StudentWorld::StudentWorld(string assetPath)
 
 int StudentWorld::init()
 {
+    // load board
     Board bd;
     string fileName = "board0";
     fileName += '0' + getBoardNumber();
@@ -38,11 +40,13 @@ int StudentWorld::init()
         for (int col=0; col<BOARD_WIDTH; col++) {
             for (int row=0; row<BOARD_HEIGHT; row++) {
                 
+                // calculate x,y position
                 int x = col*SPRITE_WIDTH;
                 int y = row*SPRITE_HEIGHT;
                 
                 Board::GridEntry ge = bd.getContentsOf(col, row);
-
+                
+                // create the appropriate player
                 switch (ge) {
                     case Board::empty:
                         break;
@@ -95,7 +99,7 @@ int StudentWorld::init()
         }
     }
         
-	startCountdownTimer(99);  // this placeholder causes timeout after 5 seconds
+	startCountdownTimer(99);
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -105,16 +109,16 @@ int StudentWorld::move()
     m_yoshi->doSomething();
     for (int i=0; i<m_actors.size(); i++) {
         if (m_actors[i]->isActive()) {
+            // allow each player to do something
             m_actors[i]->doSomething();
         } else {
+            // if player is inactive, delete its memory and remove its pointer from the m_actors vector
             delete m_actors[i];
             m_actors.erase(m_actors.begin()+i);
-            std::cerr << "deleted an actor" << std::endl;
         }
     }
     
-    // Remove newly-inactive actors after each tick
-    // remove inactive/dead game objects
+
     
     // Update the Game Status Line
     setGameStatText(generateGameStatText());
@@ -159,6 +163,7 @@ bool StudentWorld::isValidPos(int x, int y) {
 
 std::vector<Actor*> StudentWorld::getActorsAtPos(int x, int y) {
     std::vector<Actor*> res;
+    // iterate through actors and add actors with matching (x,y) to vector
     for (int i=0; i<m_actors.size(); i++)
         if (x == m_actors[i]->getX() && y == m_actors[i]->getY())
             res.push_back(m_actors[i]);
@@ -166,6 +171,7 @@ std::vector<Actor*> StudentWorld::getActorsAtPos(int x, int y) {
 }
 
 void StudentWorld::handlePlayerLanding(Player* player) {
+    // call handlePlayerLanding method of all the actors at the player's (x,y) position
     std::vector<Actor*> actorsAtPos = getActorsAtPos(player->getX(), player->getY());
     for (int i=0; i<actorsAtPos.size(); i++) {
         actorsAtPos[i]->handlePlayerLanding(player);
@@ -173,10 +179,11 @@ void StudentWorld::handlePlayerLanding(Player* player) {
 }
 
 void StudentWorld::handlePlayerCrossing(Player* player) {
-    // only run function if player is actually over a square
+    // only run function if player is exactly over a square
     if (!isValidPos(player->getX(), player->getY()))
         return;
     
+    // call handlePlayerCrossing method of all actors at player's (x,y)
     std::vector<Actor*> actorsAtPos = getActorsAtPos(player->getX(), player->getY());
     for (int i=0; i<actorsAtPos.size(); i++) {
         actorsAtPos[i]->handlePlayerCrossing(player);
@@ -309,3 +316,47 @@ void StudentWorld::createDroppingSquare(int x, int y) {
     playSound(SOUND_DROPPING_SQUARE_CREATED);
     
 }
+
+void StudentWorld::createVortex(Player *player) {
+    int dir = player->getWalkingDirection();
+    int x = player->getX();
+    int y = player->getY();
+    m_actors.push_back(new Vortex(this, IID_VORTEX, x, y, dir));
+    playSound(SOUND_PLAYER_FIRE);
+}
+
+bool StudentWorld::actorsOverlap(Actor* actor1, Actor* actor2) {
+    int bigX = std::max(actor1->getX(), actor2->getX());
+    int smallX = std::min(actor1->getX(), actor2->getX());
+    int bigY = std::max(actor1->getY(), actor2->getY());
+    int smallY = std::min(actor1->getY(), actor2->getY());
+    
+    // overlap horizontally
+    if (bigY == smallY && (bigX - smallX < SPRITE_WIDTH)) return true;
+    // overlap vertially
+    if (bigX == smallX && (bigY - smallY < SPRITE_HEIGHT)) return true;
+    
+    return false;
+}
+
+std::vector<Actor*> StudentWorld::actorsThatOverlapWith(Actor* actor) {
+    vector<Actor*> res;
+    for (int i = 0; i<m_actors.size(); i++) {
+        if (actorsOverlap(m_actors[i], actor))
+            res.push_back(m_actors[i]);
+    }
+    return res;
+}
+
+bool StudentWorld::vortexImpactedBaddie(Vortex* votex) {
+    vector<Actor*> overlappingActors = actorsThatOverlapWith(votex);
+    for (int i=0; i<overlappingActors.size(); i++) {
+        Actor* actor = overlappingActors[i];
+        if (actor->isImpactable()) {
+            actor->handleVortex();
+            return true;
+        }
+    }
+    return false;
+}
+

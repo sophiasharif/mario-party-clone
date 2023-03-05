@@ -40,6 +40,7 @@ void MoveableActor::doSomething() {
 }
 
 void MoveableActor::manageSpriteDirection() {
+    // if we're facing horizontally and perfectly aligned on a square and there is no square to move on to, change direction
     if (getX() % SPRITE_WIDTH == 0 && (
             (getWalkingDirection() == 0 && !studentWorld()->isValidPos(getX()+SPRITE_WIDTH, getY())) ||
             (getWalkingDirection() == 180 && !studentWorld()->isValidPos(getX()-SPRITE_WIDTH, getY()))
@@ -51,6 +52,7 @@ void MoveableActor::manageSpriteDirection() {
             setWalkingDirection(270);
         }
     }
+    // same for vertical
     else if (getY() % SPRITE_WIDTH == 0 && (
             (getWalkingDirection() == 90 && !studentWorld()->isValidPos(getX(), getY()+SPRITE_HEIGHT)) ||
             (getWalkingDirection() == 270 && !studentWorld()->isValidPos(getX(), getY()-SPRITE_HEIGHT))
@@ -137,21 +139,28 @@ void Player::handleLanding() {
 
 void Player::handleWaitingToRoll() {
     int action = studentWorld()->getAction(m_playerNum);
+    // get action
     if (action == ACTION_ROLL) {
         int die_roll = randInt(1, 10);
         setTicks(die_roll * 8);
         setWaitingState(false);
+    } else if (action == ACTION_FIRE && hasVortex()) {
+        studentWorld()->createVortex(this);
+        m_hasVortex = false;
     }
 }
 
 bool Player::handleFork() {
+    // if no fork, no need to handle
     if (!studentWorld()->isFork(getX(), getY(), true))
         return true;
     
+    // wait for player to choose a direction
     int action = studentWorld()->getAction(m_playerNum);
     
     std::vector<int> validActions = studentWorld()->getValidActions(getX(), getY());
     
+    // check action is valid
     for (int i=0; i<validActions.size(); i++) {
         if (action == validActions[i] && !(action == invalidAction(getWalkingDirection()))) {
             setWalkingDirection(actionToDirection(action));
@@ -211,7 +220,9 @@ EventSquare::EventSquare(StudentWorld* studentWorld, int imageID, int startX, in
 :Square(studentWorld, imageID, startX, startY) {}
 
 void EventSquare::handlePlayerLanding(Player *player) {
+    // choose an action
     int action = randInt(1, 3);
+    
     if (action == 1) {
         player->teleport();
         studentWorld()->playSound(SOUND_PLAYER_TELEPORT);
@@ -275,6 +286,13 @@ Baddie::Baddie(StudentWorld* studentWorld, int imageID, int startX, int startY)
 :MoveableActor(studentWorld, imageID, startX, startY)
 {}
 
+void Baddie::handleVortex() {
+    teleport();
+    setWalkingDirection(0);
+    setWaitingState(true);
+    m_pauseCounter = PAUSE_COUNTER;
+}
+
 void Baddie::handleWaitingToRoll(){
     m_pauseCounter--;
     if (m_pauseCounter == 0) {
@@ -326,6 +344,7 @@ void Bowser::handlePlayerLanding(Player *player) {
 }
 
 void Bowser::baddieLandingAction() {
+    // 25% chance of creating a dropping square
     if (randInt(1, 4) == 1)
         studentWorld()->createDroppingSquare(getX(), getY());
 }
@@ -348,6 +367,23 @@ void Boo::handlePlayerLanding(Player *player) {
 
 // VORTEX
 
-Vortex::Vortex(StudentWorld* studentWorld, int imageID, int startX, int startY)
-:Actor(studentWorld, imageID, startX, startY)
+Vortex::Vortex(StudentWorld* studentWorld, int imageID, int startX, int startY, int direction)
+:Actor(studentWorld, imageID, startX, startY), m_direction(direction)
 {}
+
+void Vortex::doSomething() {
+    if (!isActive())
+        return;
+    
+    moveAtAngle(m_direction, 2);
+    
+    // check it's in a valid position on the screen
+    if (getX() < 0 || getX() >= VIEW_WIDTH || getY() < 0 || getY() >= VIEW_HEIGHT)
+        setInactive();
+    
+    if (studentWorld()->vortexImpactedBaddie(this)) {
+        setInactive();
+        studentWorld()->playSound(SOUND_HIT_BY_VORTEX);
+    }
+        
+}

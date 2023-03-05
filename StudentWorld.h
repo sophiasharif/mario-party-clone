@@ -30,6 +30,8 @@ public:
     bool isFork(int x, int y, bool considerDirectionalSquares);
     std::vector<int> getValidActions(int x, int y);
     void createDroppingSquare(int x, int y);
+    void createVortex(Player* player);
+    bool vortexImpactedBaddie(Vortex* votex);
 
 private:
     std::string generateGameStatText();
@@ -40,6 +42,9 @@ private:
     int m_bank=0;
     Actor* getSquareAtPos(int x, int y);
     Player* getWinner();
+    bool actorsOverlap(Actor* actor1, Actor* actor2);
+    std::vector<Actor*> actorsThatOverlapWith(Actor* actor);
+    
 };
 
 #endif // STUDENTWORLD_H_

@@ -11,16 +11,18 @@ class Player;
 class Actor: public GraphObject {
 public:
     Actor(StudentWorld* studentWorld, int imageID, int startX, int startY, int startDirection=0, int depth=0, double size=1.0);
-    virtual ~Actor() {}; // implement!
+    virtual ~Actor() {};
     virtual void doSomething() {};
     bool isActive() { return m_isActive; }
     void setInactive() { m_isActive = false; }
     virtual void handlePlayerLanding(Player* player) {};
     virtual void handlePlayerCrossing (Player* player) {};
+    virtual void handleVortex() {};
     StudentWorld* studentWorld() { return m_studentWorld; }
     // properties
     virtual bool isSquare() { return false; }
     virtual bool isEvil() { return false; }
+    virtual bool isImpactable() { return false; }
     virtual bool managesDirection() { return false; }
 
 private:
@@ -136,15 +138,16 @@ public:
 };
 
 
-const int PAUSE_COUNTER = 50;
+const int PAUSE_COUNTER = 180;
 
 class Baddie: public MoveableActor {
 public:
     Baddie(StudentWorld* studentWorld, int imageID, int startX, int startY);
     virtual bool isEvil() { return true; }
+    virtual bool isImpactable() { return true; }
     int getPauseCounter() {return m_pauseCounter;}
     void setPauseCounter(int num) {m_pauseCounter = num;}
-    
+    virtual void handleVortex();
     
 private:
     virtual void handleWaitingToRoll();
@@ -174,8 +177,11 @@ private:
 
 class Vortex: public Actor {
 public:
-    Vortex(StudentWorld* studentWorld, int imageID, int startX, int startY);
+    Vortex(StudentWorld* studentWorld, int imageID, int startX, int startY, int direction);
+    virtual void doSomething();
+    
+private:
+    int m_direction;
 };
-// important things to implement for part 1!
 
 #endif // ACTOR_H_
